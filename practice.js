@@ -1,4 +1,4 @@
-//todo reducer which takes each todo
+//todo reducer which takes each todo; a child reducer of todos reducer 
 const todo = (state, action) => {
   switch (action.type) {
     case 'ADD_TODO':
@@ -124,3 +124,62 @@ const todoApp = combineReducers({
   todos,
   visibilityFilter
 })
+
+////////////////////////////////////////////////////////
+//Implementing React (View Layer)
+
+const { combineReducers } = Redux;
+const todoApp = combineReducers({
+  todos,
+  visibilityFilter
+});
+const { createStore } = Redux;
+const store = createStore(todoApp);
+
+const { Component } = React; //base class for all objects
+
+let nextTodoId = 0;
+class TodoApp extends Component {
+  render() {
+    return (
+      <div>
+        //React callback ref api is a function; it gets the node corresponding to the ref
+        <input ref={node => {
+          this.input = node;
+        }} />
+        <button onClick={ () => {
+          //Common for React Compoments to dispatch actions in Redux apps
+          //When an action is dispatched, store calls reducer that it was created with (todoApp) with current state & action
+          store.dispatch({
+            type: 'ADD_TODO',
+            text: this.input.value,
+            id: nextTodoId++
+          });
+          this.input.value = ''; //reset the value after dispatching action, so the input field is clear
+        }}>
+          Add Todo
+        </button>
+        <ul>
+        //for every todo item, will show the list item of the text of that particular todo
+        //TodoApp Component receive todos as a prop and maps to display list of todos using todo.id as key
+          {this.props.todos.map(todo =>
+            <li key={todo.id}>
+              {todo.text}
+            </li>
+          )}
+      </div>)
+  }
+}
+
+//render function will update DOM in response to current state
+const render = () => {
+  ReactDOM.render(
+    <ToDoApp
+      todos={store.getState().todos} //the render func reads current state of the store, passes the todos array that it gets from the store to the ToDoApp Component as a prop
+    />,
+    document.getElementbyId('root') //will render into the root id div
+  )
+};
+
+store.subscribe(render); //will call render whenever the store changes
+render();
