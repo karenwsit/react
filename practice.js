@@ -1,4 +1,4 @@
-//todo reducer which takes each todo; a child reducer of todos reducer 
+//todo reducer which takes each todo; a child reducer of todos reducer
 const todo = (state, action) => {
   switch (action.type) {
     case 'ADD_TODO':
@@ -162,11 +162,25 @@ class TodoApp extends Component {
         <ul>
         //for every todo item, will show the list item of the text of that particular todo
         //TodoApp Component receive todos as a prop and maps to display list of todos using todo.id as key
+        //this.props.todos will render the update todos
           {this.props.todos.map(todo =>
-            <li key={todo.id}>
+            <li key={todo.id}
+              onClick={ () => {
+                store.dispatch({
+                  type: 'TOGGLE_TODO',
+                  id: todo.id
+                });
+              }}
+              style={{
+                textDecoration:
+                  todo.completed
+                  ? 'line-through'
+                  : 'none'
+              }}>
               {todo.text}
             </li>
           )}
+        </ul>
       </div>)
   }
 }
@@ -182,4 +196,145 @@ const render = () => {
 };
 
 store.subscribe(render); //will call render whenever the store changes
+render();
+
+
+/////////////////////////////////////////////////////////
+//Filtering Todos - Video 19
+
+const setVisibilityFilters = (state = 'SHOW_ALL', action) => {
+	switch ( action.type ) {
+		case 'SET_VISIBILITY_FILTER':
+			return action.filter;
+		default:
+			return state
+	}
+};
+
+//FilterLink FUNCTIONAL Component
+const FilterLink = ({
+  filter, //accepts the filter prop
+  currentFilter, //to style this
+  children //contents of the link below
+}) => {
+  if (filter === currentFilter) {
+    return <span>{children}</span>; //will then be unclickable; just static text and only show relevant filters
+  }
+  return (
+    <a href='#'
+      onClick={e => {
+        e.preventDefault();
+        store.dispatch({
+          type: 'SET_VISIBILITY_FILTER',
+          filter
+        });
+      }}
+    >
+      {children} //
+    </a>
+  )
+}
+
+//new function to filter
+const getVisibleTodos = (
+  todos,
+  filter
+) => {
+  switch (filter) {
+    case 'SHOW_ALL':
+      return todos;
+    case 'SHOW_COMPLETED':
+      return todos.filter(
+        t => t.completed
+      );
+    case 'SHOW_ACTIVE':
+      return todos.filter(
+        t => !t.completed
+      );
+  }
+}
+
+class TodoApp extends Component {
+  render() {
+    //destruct first so we dont have to type this.props everytime
+    const { todos, visibilityFilter } = this.props;
+    //before rendering, get the visibleTodos
+    const visibleTodos = getVisibleTodos(
+      todos, //this.props.todos,
+      visibilityFilter //this.props.visibilityFilter
+    )
+    return (
+      <div>
+        <input ref={node => {
+          this.input = node;
+        }} />
+        <button onClick={ () => {
+          store.dispatch({
+            type: 'ADD_TODO',
+            text: this.input.value,
+            id: nextTodoId++
+          });
+          this.input.value = '';
+        }}>
+          Add Todo
+        </button>
+        <ul>
+          //in place of this.props.todos!!
+          {visibleTodos.map(todo =>
+            <li key={todo.id}
+              onClick={ () => {
+                store.dispatch({
+                  type: 'TOGGLE_TODO',
+                  id: todo.id
+                });
+              }}
+              style={{
+                textDecoration:
+                  todo.completed
+                  ? 'line-through'
+                  : 'none'
+              }}>
+              {todo.text}
+            </li>
+          )}
+        </ul>
+        //populates 3 different links
+        <p>
+          Show:
+          {' '}
+          <FilterLink
+            filter='SHOW_ALL'
+            currentFilter={visibilityFilter}
+          >
+           All
+          </FilterLink>
+          {' '}
+          <FilterLink
+            filter='SHOW_ACTIVE'
+            currentFilter={visibilityFilter}
+          >
+            Active
+          </FilterLink>
+          {' '}
+          <FilterLink
+            filter='SHOW_COMPLETED'
+            currentFilter={visibilityFilter}
+          >
+            Completed
+          </FilterLink>
+        </p>
+      </div>)
+  }
+}
+
+const render = () => {
+  ReactDOM.render(
+    <ToDoApp
+      {...store.getState()} //instead of passing the visibilityFilter prop expilicitly, pass every state field
+    />,
+    document.getElementbyId('root')
+  )
+};
+
+store.subscribe(render);
 render();
